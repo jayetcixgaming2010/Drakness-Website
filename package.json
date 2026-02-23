@@ -1,0 +1,16 @@
+{
+  "name": "roblox-key-system",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.25.1",
+    "dotenv": "^16.4.5",
+    "ejs": "^3.1.10",
+    "express": "^4.21.0",
+    "mongoose": "^8.7.0",
+    "serverless-http": "^4.0.0"
+  }
+}

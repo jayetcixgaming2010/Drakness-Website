@@ -1,0 +1,21 @@
+[build]
+  publish = "public"
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/start"
+  to = "/.netlify/functions/api/start"
+  status = 302
+  force = true
+
+[[redirects]]
+  from = "/verify"
+  to = "/verify.html"
+  status = 200
+  force = true
