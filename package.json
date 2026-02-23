@@ -1,16 +1,13 @@
 {
-  "name": "roblox-key-system",
+  "name": "drakness-website",
   "version": "1.0.0",
+  "description": "Website nhận key có thời hạn 24h",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "netlify dev"
   },
   "dependencies": {
-    "discord.js": "^14.25.1",
-    "dotenv": "^16.4.5",
-    "ejs": "^3.1.10",
-    "express": "^4.21.0",
-    "mongoose": "^8.7.0",
-    "serverless-http": "^4.0.0"
+    "mongodb": "^5.0.0",
+    "crypto": "^1.0.1"
   }
 }
