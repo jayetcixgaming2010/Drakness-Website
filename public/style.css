@@ -1,0 +1,103 @@
+/* style.css - Theme chính cho key system */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+  color: white;
+  text-align: center;
+  padding: 60px 20px;
+  min-height: 100vh;
+  margin: 0;
+  overflow-x: hidden;
+}
+
+h1 {
+  color: #ff4d4d;
+  text-shadow: 0 0 10px #ff4d4d, 0 0 20px #ff4d4d;
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+}
+
+p {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin: 20px 0;
+  opacity: 0.9;
+}
+
+button {
+  padding: 18px 60px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #ff4d4d, #c0392b);
+  color: white;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  margin: 30px auto;
+  box-shadow: 0 8px 16px rgba(255, 77, 77, 0.4);
+  transition: all 0.3s ease;
+  display: inline-block;
+}
+
+button:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(255, 77, 77, 0.6);
+  background: linear-gradient(135deg, #ff6b6b, #e74c3c);
+}
+
+#status {
+  font-size: 1.8rem;
+  margin: 40px 0;
+  color: #ffcc00;
+  text-shadow: 0 0 10px #ffcc00;
+  transition: color 0.5s;
+}
+
+#key-box {
+  display: none;
+  background: rgba(46, 204, 113, 0.15);
+  border: 2px solid #2ecc71;
+  color: #2ecc71;
+  padding: 35px;
+  font-size: 2rem;
+  margin: 40px auto;
+  max-width: 550px;
+  border-radius: 20px;
+  box-shadow: 0 0 40px rgba(46, 204, 113, 0.5);
+  backdrop-filter: blur(5px);
+}
+
+#key-text {
+  font-family: 'Courier New', monospace;
+  letter-spacing: 4px;
+  font-weight: bold;
+  font-size: 2.8rem;
+  margin: 25px 0;
+  word-break: break-all;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 15px;
+  border-radius: 10px;
+}
+
+.info-text {
+  font-size: 1.2rem;
+  margin-top: 20px;
+}
+
+.success { color: #2ecc71; }
+.warning { color: #ffcc00; }
+.error   { color: #e74c3c; font-size: 1.4rem; margin-top: 30px; }
+
+/* Responsive cho mobile */
+@media (max-width: 600px) {
+  h1 { font-size: 2rem; }
+  button { padding: 15px 40px; font-size: 1.3rem; }
+  #key-text { font-size: 2rem; letter-spacing: 2px; }
+  #key-box { padding: 25px; max-width: 95%; }
+}

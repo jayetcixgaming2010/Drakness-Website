@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Đang xử lý...</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; text-align: center; padding: 80px 20px; min-height: 100vh; margin: 0; }
+    #status { font-size: 28px; margin: 40px 0; color: #ffcc00; text-shadow: 0 0 10px #ffcc00; }
+    #key-box { display: none; background: rgba(46, 204, 113, 0.2); border: 2px solid #2ecc71; color: #2ecc71; padding: 30px; font-size: 32px; margin: 40px auto; max-width: 500px; border-radius: 15px; box-shadow: 0 0 30px rgba(46, 204, 113, 0.5); }
+    #key-text { font-family: monospace; letter-spacing: 3px; font-weight: bold; font-size: 42px; margin: 20px 0; word-break: break-all; }
+  </style>
+</head>
+<body>
+  <h1>HOÀN THÀNH NHIỆM VỤ</h1>
+  <div id="status">Đang xử lý nhiệm vụ... chờ khoảng 15 giây nhé!</div>
+
+  <div id="key-box">
+    <p>KEY CỦA BẠN:</p>
+    <div id="key-text"></div>
+    <p style="font-size: 18px; margin-top: 15px; color: #ffcc00;">Hoàn thành nhiệm vụ để unlock key (hết hạn sau 24 tiếng)</p>
+    <p style="font-size: 16px; margin-top: 20px; opacity: 0.8;">Copy và dán vào script Roblox ngay!</p>
+  </div>
+
+  <script>
+    // Lấy key từ query param (backend sẽ redirect với ?key=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const key = urlParams.get('key') || '';
+
+    if (!key) {
+      document.getElementById('status').innerHTML = 'Lỗi: Không nhận được key. Thử lại từ đầu.';
+      document.getElementById('status').style.color = '#e74c3c';
+    } else if (urlParams.get('completed') === 'true') {
+      document.getElementById('status').style.display = 'none';
+      document.getElementById('key-box').style.display = 'block';
+      document.getElementById('key-text').textContent = key;
+      document.getElementById('key-box').querySelector('p:nth-child(3)').textContent = 'Key hợp lệ! (hết hạn sau 24 tiếng)';
+      document.getElementById('key-box').querySelector('p:nth-child(3)').style.color = '#2ecc71';
+    } else {
+      setTimeout(async () => {
+        try {
+          const res = await fetch('/api/complete-task', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key })
+          });
+          const data = await res.json();
+          if (data.success) {
+            document.getElementById('status').innerHTML = 'HOÀN THÀNH! KEY ĐÃ MỞ KHÓA ✓';
+            document.getElementById('status').style.color = '#2ecc71';
+            document.getElementById('key-box').style.display = 'block';
+            document.getElementById('key-text').textContent = key;
+            document.getElementById('key-box').querySelector('p:nth-child(3)').textContent = 'Key hợp lệ! (hết hạn sau 24 tiếng)';
+            document.getElementById('key-box').querySelector('p:nth-child(3)').style.color = '#2ecc71';
+          } else {
+            document.getElementById('status').innerHTML = data.message || 'Có lỗi xảy ra';
+            document.getElementById('status').style.color = '#e74c3c';
+          }
+        } catch (err) {
+          document.getElementById('status').innerHTML = 'Lỗi kết nối. Thử refresh trang.';
+          document.getElementById('status').style.color = '#e74c3c';
+        }
+      }, 15000);
+    }
+  </script>
+</body>
+</html>
