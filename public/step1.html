@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NTT HUB - Step 1</title>
+  <style>
+    :root{--bg:#0a0a0b;--line:rgba(255,255,255,.14);--text:#f2f2f2;--muted:#a7a7a7;--shadow:0 22px 70px rgba(0,0,0,.7);--r:18px}
+    *{box-sizing:border-box}html,body{height:100%}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--text);background:radial-gradient(900px 450px at 20% 10%,rgba(255,255,255,.08),transparent 60%),radial-gradient(900px 450px at 80% 30%,rgba(255,255,255,.06),transparent 60%),var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px 16px;overflow-x:hidden}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E");mix-blend-mode:overlay;opacity:.35}
+    .title1,.title2{position:fixed;left:20px;z-index:2;margin:0;text-transform:uppercase;letter-spacing:.18em;font-weight:800}
+    .title1{top:18px;font-size:14px;color:rgba(255,255,255,.92)}
+    .title2{top:46px;font-size:12px;color:var(--muted);letter-spacing:.22em}
+    .box{position:relative;z-index:1;width:min(520px,100%);border:1px solid var(--line);border-radius:var(--r);padding:18px;background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));box-shadow:var(--shadow);overflow:hidden;text-align:left}
+    .box::after{content:"";position:absolute;inset:-2px;background:radial-gradient(520px 240px at 15% 20%,rgba(255,255,255,.12),transparent 55%),radial-gradient(420px 220px at 80% 35%,rgba(255,255,255,.10),transparent 60%);opacity:.55;pointer-events:none;filter:blur(2px)}
+    .box>*{position:relative;z-index:1}
+    .item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border:1px solid rgba(255,255,255,.14);margin-bottom:12px;border-radius:14px;cursor:pointer;background:rgba(0,0,0,.18);transition:transform .12s,background .12s,border-color .12s;user-select:none;font-size:14px;color:rgba(255,255,255,.86);letter-spacing:.01em}
+    .item:hover{transform:translateY(-1px);background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.24)}
+    [id^="status"]{display:inline-flex;align-items:center;justify-content:center;min-width:28px;height:24px;font-family:ui-monospace,monospace;color:rgba(255,255,255,.85)}
+    .spinner{border:3px solid rgba(255,255,255,.18);border-top:3px solid rgba(255,255,255,.92);border-radius:999px;width:18px;height:18px;animation:spin 1s linear infinite}
+    @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    #finalBtn{margin-top:14px;text-align:center;padding:12px 14px;border-radius:14px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;user-select:none;font-size:14px}
+    .locked{border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.55);background:rgba(255,255,255,.04);cursor:not-allowed}
+    .unlocked{border:1px solid rgba(255,255,255,.34);background:rgba(255,255,255,.12);color:rgba(255,255,255,.92);cursor:pointer;box-shadow:0 0 18px rgba(255,255,255,.12);transition:transform .12s,background .12s,border-color .12s}
+    .unlocked:hover{transform:translateY(-1px);background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.46)}
+    #api-status{margin-top:10px;text-align:center;font-size:12px;color:rgba(255,255,255,.55);letter-spacing:.02em;min-height:16px}
+  </style>
+</head>
+<body>
+  <h1 class="title1">NTT HUB</h1>
+  <h2 class="title2">Step 1</h2>
+
+  <!-- CHỈ GIỮ LẠI MỘT THẺ SCRIPT NÀY -->
+  <script>
+    const API = "https://drakness.netlify.app/.netlify/functions/api"; // THAY DOMAIN CỦA BẠN
+    const hwid = localStorage.getItem("hwid");
+
+    if (!hwid) showBlockNotification();
+
+    const box = document.createElement("div");
+    box.className = "box";
+    box.id = "box";
+    document.body.appendChild(box);
+
+    let links = {};
+    let completed = [];
+
+    fetch("/data/ytb.json") 
+        .then(r => r.json())
+        .then(data => {
+            links = data;
+            const total = Object.keys(links).length;
+            completed = new Array(total).fill(false);
+
+            for (let i = 1; i <= total; i++) {
+                const item = document.createElement("div");
+                item.className = "item";
+                item.id = `task${i}`;
+                item.innerHTML = `<span>Like + Comment Video</span><span id="status${i}"></span>`;
+                item.onclick = () => startTask(i);
+                box.appendChild(item);
+            }
+
+            const finalBtn = document.createElement("div");
+            finalBtn.className = "locked";
+            finalBtn.id = "finalBtn";
+            finalBtn.innerText = "LOCK";
+            box.appendChild(finalBtn);
+
+            const apiStatus = document.createElement("div");
+            apiStatus.id = "api-status";
+            box.appendChild(apiStatus);
+        })
+        .catch(() => alert("Không tải được danh sách video!"));
+
+    function startTask(id) {
+        const status = document.getElementById(`status${id}`);
+        status.innerHTML = '<div class="spinner"></div>';
+
+        const linkKey = `link${id}`;
+        if (!links[linkKey]) { 
+            status.innerHTML = "✗"; 
+            return; 
+        }
+
+        window.open(links[linkKey], "_blank");
+
+        setTimeout(() => {
+            status.innerHTML = "✔";
+            completed[id - 1] = true;
+            checkUnlock();
+        }, 5000);
+    }
+
+    function checkUnlock() {
+        if (!completed.every(x => x)) return;
+
+        const btn = document.getElementById("finalBtn");
+        btn.innerText = "UNLOCK";
+        btn.classList.add("unlocked");
+        btn.classList.remove("locked");
+        btn.onclick = callStep1Api;
+    }
+
+    async function callStep1Api() {
+        const btn = document.getElementById("finalBtn");
+        const apiStatus = document.getElementById("api-status");
+
+        btn.style.pointerEvents = "none";
+        btn.innerText = "Đang xử lý...";
+        apiStatus.textContent = "Đang gọi API...";
+
+        try {
+            const res = await fetch(`${API}/step1`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hwid: hwid })
+            });
+            
+            const data = await res.json();
+
+            if (data.success) {
+                apiStatus.textContent = "✔ Step 1 hoàn thành!";
+                setTimeout(() => {
+                    window.location.href = "https://direct-link.net/1213408/ntt-hub1";
+                }, 500);
+            } else {
+                btn.style.pointerEvents = "auto";
+                btn.innerText = "UNLOCK";
+                apiStatus.textContent = "Lỗi: " + (data.error || "unknown");
+            }
+        } catch (e) {
+            console.error("Lỗi fetch:", e);
+            btn.style.pointerEvents = "auto";
+            btn.innerText = "UNLOCK";
+            apiStatus.textContent = "Lỗi kết nối API. Thử lại.";
+        }
+    }
+
+    function showBlockNotification() {
+        const overlay = document.createElement("div");
+        Object.assign(overlay.style, { position:"fixed", inset:"0", backgroundColor:"rgba(0,0,0,0.85)", zIndex:"9998" });
+        document.body.appendChild(overlay);
+
+        const noti = document.createElement("div");
+        Object.assign(noti.style, { position:"fixed", top:"50%", left:"50%", transform:"translate(-50%,-50%)", background:"#111", padding:"25px 35px", border:"2px solid white", borderRadius:"12px", color:"white", fontFamily:"Arial", zIndex:"9999", width:"350px", textAlign:"center", boxShadow:"0 0 20px rgba(255,255,255,0.3)" });
+        noti.innerHTML = `
+            <h2 style="margin-top:0;">Notification</h2>
+            <p style="font-size:16px;line-height:1.5;">
+                Bạn chưa có HWID<br><br>
+                Vui lòng dùng đúng URL:<br><br>
+                <b>https://ntt-hub.xyz/?hwid=YOUR_HWID</b>
+            </p>
+        `;
+        document.body.appendChild(noti);
+    }
+  </script>
+
+  <!-- Cloudflare Analytics (giữ nguyên) -->
+  <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1d8bccf5ab1748bc8db6759a1df26490","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

@@ -1,1 +1,245 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NTT HUB - KEY SYSTEM</title>
+  <link rel="icon" type="image/png" href="/Logo/1750522984859.png" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo"><img src="/Logo/1750522984859.png" alt="Logo" /></div>
+        <div class="brand-title">
+          <p class="name">NTT HUB</p>
+          <p class="sub">Key System</p>
+        </div>
+      </div>
+      <div class="pill">Get Key</div>
+    </header>
 
+    <main>
+      <section class="card">
+        <div class="inner">
+          <div class="kicker"><span class="dot"></span>Key System</div>
+          <h1 class="title">Get Your Key</h1>
+          <p class="desc">Nhấn nút bên dưới để bắt đầu nhận key. Bạn sẽ trải qua 3 bước nhanh gọn.</p>
+
+          <div class="grid">
+            <div class="box">
+              <h2>Get Key</h2>
+              <button class="btn primary" id="btnGetKey" onclick="startGetKey()">Get Key</button>
+            </div>
+            <div class="box">
+              <h2>Discord</h2>
+              <button class="btn" onclick="window.open('https://discord.gg/sEs7HvCXJF','_blank')">Join Discord</button>
+            </div>
+          </div>
+
+          <div id="status-msg" class="status-message"></div>
+          
+          <!-- Hiển thị trạng thái key nếu đã có -->
+          <div id="key-status" class="key-status" style="display: none;"></div>
+
+          <footer>
+            <div>© <span id="y"></span> NTT HUB</div>
+            <a class="link" href="https://discord.gg/sEs7HvCXJF" target="_blank">discord.gg/sEs7HvCXJF</a>
+          </footer>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    document.getElementById("y").textContent = new Date().getFullYear();
+
+    const API = "https://drakness.netlify.app/.netlify/functions/api"; // THAY DOMAIN CỦA BẠN
+
+    // Lấy hwid từ URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const hwid = urlParams.get("hwid");
+
+    if (hwid) {
+      localStorage.setItem("hwid", hwid);
+    }
+
+    const storedHwid = localStorage.getItem("hwid");
+
+    // Kiểm tra nếu có HWID thì kiểm tra trạng thái key hiện tại
+    if (storedHwid) {
+      checkUserKeyStatus();
+    } else {
+      showBlockNotification();
+    }
+
+    // Kiểm tra trạng thái key của user
+    async function checkUserKeyStatus() {
+      try {
+        const res = await fetch(`${API}/user-status/${encodeURIComponent(storedHwid)}`);
+        const data = await res.json();
+        
+        if (data.success && data.hasValidKey) {
+          const keyStatus = document.getElementById("key-status");
+          const expiryDate = new Date(data.keyInfo.expiresAt);
+          const now = new Date();
+          const hoursLeft = Math.floor((expiryDate - now) / (1000 * 60 * 60));
+          
+          keyStatus.style.display = "block";
+          keyStatus.innerHTML = `
+            <div class="key-info">
+              <p>✅ Bạn đã có key hợp lệ!</p>
+              <p>Key: <strong>${data.keyInfo.key}</strong></p>
+              <p>Còn hạn: <strong>${hoursLeft} giờ</strong></p>
+              <button class="btn small" onclick="window.location.href='key.html'">Xem Key</button>
+            </div>
+          `;
+        }
+      } catch (error) {
+        console.error("Lỗi kiểm tra key:", error);
+      }
+    }
+
+    async function startGetKey() {
+      if (!storedHwid) return showBlockNotification();
+
+      const btn = document.getElementById("btnGetKey");
+      const msg = document.getElementById("status-msg");
+
+      btn.disabled = true;
+      btn.textContent = "Đang khởi tạo...";
+      msg.textContent = "";
+      msg.className = "status-message";
+
+      const ostime = Math.floor(Date.now() / 1000);
+      localStorage.setItem("ostime", ostime);
+
+      try {
+        // Kiểm tra xem user đã có key chưa
+        const checkRes = await fetch(`${API}/user-status/${encodeURIComponent(storedHwid)}`);
+        const checkData = await checkRes.json();
+        
+        if (checkData.success && checkData.hasValidKey) {
+          msg.textContent = "✔ Bạn đã có key, đang chuyển đến trang key...";
+          msg.className = "status-message success";
+          setTimeout(() => {
+            window.location.href = "key.html";
+          }, 1000);
+          return;
+        }
+
+        // Kiểm tra xem user đã hoàn thành step nào chưa
+        if (checkData.success) {
+          if (checkData.steps.step1 && checkData.steps.step2 && !checkData.steps.step3) {
+            msg.textContent = "⏳ Bạn đã hoàn thành Step 2, đang chuyển tiếp...";
+            setTimeout(() => {
+              window.location.href = "step3.html";
+            }, 1000);
+            return;
+          } else if (checkData.steps.step1 && !checkData.steps.step2) {
+            msg.textContent = "⏳ Bạn đã hoàn thành Step 1, đang chuyển tiếp...";
+            setTimeout(() => {
+              window.location.href = "step2.html";
+            }, 1000);
+            return;
+          }
+        }
+
+        // Nếu chưa có gì, bắt đầu từ step1
+        msg.textContent = "✔ Đang chuyển đến bước 1...";
+        msg.className = "status-message success";
+        setTimeout(() => {
+          window.location.href = "step1.html";
+        }, 600);
+        
+      } catch (error) {
+        console.error("Lỗi:", error);
+        btn.disabled = false;
+        btn.textContent = "Get Key";
+        msg.textContent = "Không kết nối được server. Thử lại.";
+        msg.className = "status-message error";
+      }
+    }
+
+    function showBlockNotification() {
+      const overlay = document.createElement("div");
+      Object.assign(overlay.style, { position:"fixed", inset:"0", backgroundColor:"rgba(0,0,0,0.85)", zIndex:"9998" });
+      document.body.appendChild(overlay);
+
+      const noti = document.createElement("div");
+      Object.assign(noti.style, { position:"fixed", top:"50%", left:"50%", transform:"translate(-50%,-50%)", background:"#111", padding:"28px 36px", border:"1.5px solid rgba(255,255,255,0.3)", borderRadius:"16px", color:"white", fontFamily:"ui-sans-serif,sans-serif", zIndex:"9999", width:"360px", textAlign:"center", boxShadow:"0 0 40px rgba(255,255,255,0.1)" });
+      noti.innerHTML = `
+        <h2 style="margin-top:0;font-size:16px;letter-spacing:.1em;text-transform:uppercase;">Notification</h2>
+        <p style="font-size:14px;line-height:1.7;color:rgba(255,255,255,.78);">
+          Bạn chưa có HWID.<br><br>
+          Vui lòng dùng đúng URL:<br><br>
+          <b style="color:white;word-break:break-all;">https://ntt-hub.xyz/?hwid=YOUR_HWID</b>
+          <br><br>
+          <span style="font-size:12px;color:rgba(255,255,255,0.5);">(Thay YOUR_HWID bằng HWID thật của bạn)</span>
+        </p>
+      `;
+      document.body.appendChild(noti);
+      
+      // Disable nút Get Key
+      document.getElementById("btnGetKey").disabled = true;
+    }
+  </script>
+
+  <style>
+    /* Thêm một số style cho status message */
+    .status-message {
+      margin-top: 16px;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 14px;
+      text-align: center;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .status-message.success {
+      color: #4ade80;
+      border-color: rgba(74, 222, 128, 0.3);
+    }
+    .status-message.error {
+      color: #f87171;
+      border-color: rgba(248, 113, 113, 0.3);
+    }
+    .key-status {
+      margin-top: 20px;
+      padding: 16px;
+      border-radius: 16px;
+      background: rgba(74, 222, 128, 0.1);
+      border: 1px solid rgba(74, 222, 128, 0.3);
+    }
+    .key-info {
+      text-align: center;
+    }
+    .key-info p {
+      margin: 8px 0;
+      color: rgba(255,255,255,0.9);
+    }
+    .key-info strong {
+      color: #4ade80;
+      font-family: monospace;
+      font-size: 16px;
+    }
+    .btn.small {
+      padding: 8px 16px;
+      font-size: 13px;
+      margin-top: 8px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 999px;
+      cursor: pointer;
+      color: white;
+      transition: all 0.2s;
+    }
+    .btn.small:hover {
+      background: rgba(255,255,255,0.2);
+      border-color: rgba(255,255,255,0.3);
+    }
+  </style>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1d8bccf5ab1748bc8db6759a1df26490","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>

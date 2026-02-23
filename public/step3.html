@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NTT HUB - Step 3</title>
+  <style>
+    :root{--bg:#0a0a0b;--line:rgba(255,255,255,.14);--text:#f2f2f2;--muted:#a7a7a7;--shadow:0 22px 70px rgba(0,0,0,.7);--r:18px}
+    *{box-sizing:border-box}html,body{height:100%}
+    body{margin:0;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--text);background:radial-gradient(900px 450px at 20% 10%,rgba(255,255,255,.08),transparent 60%),radial-gradient(900px 450px at 80% 30%,rgba(255,255,255,.06),transparent 60%),var(--bg);overflow-x:hidden}
+    body::before{content:"";position:fixed;inset:0;pointer-events:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.12'/%3E%3C/svg%3E");mix-blend-mode:overlay;opacity:.35}
+    .wrap{position:relative;max-width:980px;margin:0 auto;padding:28px 18px 44px;min-height:100%;display:flex;flex-direction:column}
+    header{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:10px 0 22px}
+    .brand h1{margin:0;font-size:14px;letter-spacing:.26em;text-transform:uppercase;font-weight:800}
+    .brand p{margin:6px 0 0;color:var(--muted);font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+    main{flex:1;display:grid;place-items:center;padding:10px 0 24px}
+    .card{width:min(640px,100%);border:1px solid var(--line);background:linear-gradient(180deg,rgba(255,255,255,.07),rgba(255,255,255,.02));border-radius:var(--r);box-shadow:var(--shadow);padding:28px;position:relative;overflow:hidden;text-align:center}
+    .card::after{content:"";position:absolute;inset:-2px;background:radial-gradient(520px 240px at 15% 20%,rgba(255,255,255,.12),transparent 55%),radial-gradient(420px 220px at 80% 35%,rgba(255,255,255,.10),transparent 60%);opacity:.55;pointer-events:none;filter:blur(2px)}
+    .inner{position:relative;z-index:1}
+    .kicker{display:inline-flex;align-items:center;gap:8px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.18);padding:8px 12px;border-radius:999px;font-size:12px;color:rgba(255,255,255,.75);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
+    .dot{width:7px;height:7px;border-radius:999px;background:var(--text);box-shadow:0 0 0 3px rgba(255,255,255,.10);opacity:.9}
+    .title{margin:0 0 10px;font-size:22px;letter-spacing:.08em;text-transform:uppercase}
+    .desc{margin:0 0 14px;color:rgba(255,255,255,.72);font-size:14px;line-height:1.7}
+    .spinner-wrap{display:flex;justify-content:center;margin:18px 0}
+    .spinner{border:3px solid rgba(255,255,255,.18);border-top:3px solid rgba(255,255,255,.92);border-radius:999px;width:32px;height:32px;animation:spin 1s linear infinite}
+    @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+    #statusMsg{font-size:13px;color:rgba(255,255,255,.65);letter-spacing:.02em;margin-top:6px}
+    .warn{color:#ff8a65!important}
+    footer{margin-top:18px;padding-top:14px;border-top:1px solid rgba(255,255,255,.10);color:rgba(255,255,255,.55);font-size:12px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;position:relative;z-index:1}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <h1>NTT HUB</h1>
+        <p>Step 3</p>
+      </div>
+    </header>
+
+    <main>
+      <section class="card">
+        <div class="inner">
+          <div class="kicker"><span class="dot"></span>Key Process</div>
+          <h2 class="title">Tạo Key</h2>
+          <p class="desc">Đang xác minh và tạo key cho bạn...</p>
+
+          <div class="spinner-wrap">
+            <div class="spinner"></div>
+          </div>
+          <div id="statusMsg">Đang kiểm tra...</div>
+
+          <footer>
+            <div>NTT HUB • Key System</div>
+            <div>Step 3</div>
+          </footer>
+        </div>
+      </section>
+    </main>
+  </div>
+
+<!-- Trong thẻ <script> của step3.html, thay thế toàn bộ nội dung script bằng: -->
+  <script>
+      const API = "https://drakness.netlify.app/.netlify/functions/api"; // THAY DOMAIN CỦA BẠN
+      const hwid = localStorage.getItem("hwid");
+      const urlParams = new URLSearchParams(window.location.search);
+      const hash = urlParams.get("hash");
+
+      if (!hwid) {
+          showBlockNotification();
+      } else {
+          window.onload = verifyStep3;
+      }
+
+      async function verifyStep3() {
+          const msg = document.getElementById("statusMsg");
+
+          if (!hash) {
+              msg.textContent = "Không có hash. Quay lại bước 1...";
+              setTimeout(() => window.location.href = "step1.html", 1500);
+              return;
+          }
+
+          msg.textContent = "Đang xác minh Linkvertise...";
+
+          try {
+              const res = await fetch(`${API}/step3`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                      hwid: hwid,
+                      hash: hash 
+                  })
+              });
+              
+              const data = await res.json();
+
+              if (data.success && data.key) {
+                  localStorage.setItem("ntt_key", data.key);
+                  localStorage.setItem("ntt_expires", data.expiresAt);
+                  msg.textContent = "✔ Tạo key thành công! Đang chuyển...";
+                  setTimeout(() => window.location.href = "key.html", 500);
+              } else {
+                  let errMsg = "Lỗi: " + (data.error || "unknown");
+                  let redirectTarget = "step1.html";
+
+                  if (data.error === "bypass_detected") {
+                      errMsg = "⚠ Phát hiện bypass! Tiến trình đã bị reset. Quay lại bắt đầu...";
+                      msg.classList.add("warn");
+                      redirectTarget = "step1.html";
+                  } else if (data.error === "step1_not_done") {
+                      errMsg = "Bạn chưa hoàn thành Step 1. Quay lại...";
+                  } else if (data.error === "step2_not_done") {
+                      errMsg = "Bạn chưa hoàn thành Step 2. Quay lại...";
+                  } else if (data.error === "invalid_hash") {
+                      errMsg = "Hash không hợp lệ. Vui lòng làm lại từ đầu.";
+                  }
+
+                  msg.textContent = errMsg;
+                  setTimeout(() => window.location.href = redirectTarget, 3000);
+              }
+          } catch (e) {
+              document.getElementById("statusMsg").textContent = "Lỗi kết nối. Thử lại...";
+              setTimeout(() => window.location.href = "step1.html", 2500);
+          }
+      }
+
+      function showBlockNotification() {
+          const overlay = document.createElement("div");
+          Object.assign(overlay.style, { position:"fixed", inset:"0", backgroundColor:"rgba(0,0,0,0.85)", zIndex:"9998" });
+          document.body.appendChild(overlay);
+          const noti = document.createElement("div");
+          Object.assign(noti.style, { position:"fixed", top:"50%", left:"50%", transform:"translate(-50%,-50%)", background:"#111", padding:"25px 35px", border:"2px solid white", borderRadius:"12px", color:"white", fontFamily:"Arial", zIndex:"9999", width:"350px", textAlign:"center" });
+          noti.innerHTML = `<h2 style="margin-top:0;">Notification</h2><p style="font-size:16px;line-height:1.5;">Bạn chưa có HWID<br><br><b>https://ntt-hub.xyz/key/ntt-hub.html?hwid=YOUR_HWID</b></p>`;
+          document.body.appendChild(noti);
+      }
+  </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1d8bccf5ab1748bc8db6759a1df26490","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
+</body>
+</html>
