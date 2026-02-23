@@ -1,91 +1,252 @@
-// netlify/functions/api.js
-const express = require('express');
-const mongoose = require('mongoose');
-const serverless = require('serverless-http');
+const { MongoClient } = require('mongodb');
+const crypto = require('crypto');
 
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+const uri = process.env.MONGODB_URI;
+const client = new MongoClient(uri);
 
-let cachedDb = null;
-
-async function connectDB() {
-  if (cachedDb) return cachedDb;
-  await mongoose.connect(process.env.MONGO_URI, {
-    serverSelectionTimeoutMS: 5000,
-    maxPoolSize: 5,  // Giới hạn pool nhỏ cho serverless
-    minPoolSize: 1
-  });
-  cachedDb = mongoose.connection;
-  console.log('MongoDB connected');
-  return cachedDb;
+// Hàm tạo key ngẫu nhiên
+function generateKey() {
+    return 'DARK-' + crypto.randomBytes(8).toString('hex').toUpperCase();
 }
 
-const UserSchema = new mongoose.Schema({
-  ip: String,
-  key: String,
-  completed: Boolean,
-  createdAt: Date,
-  expiresAt: { type: Date, index: { expires: '0' } }
-});
-const User = mongoose.model('User', UserSchema);
+// Hàm lấy IP
+function getClientIP(event) {
+    return event.headers['x-forwarded-for'] || 
+           event.headers['client-ip'] || 'unknown';
+}
 
-app.post('/start', async (req, res) => {
-  await connectDB();
-  const ip = req.headers['x-forwarded-for'] || req.ip || 'unknown';
-  let user = await User.findOne({ ip });
+// Hàm validate HWID (chỉ cho phép chữ, số, - _)
+function validateHWID(hwid) {
+    return /^[a-zA-Z0-9\-_]+$/.test(hwid) && hwid.length >= 8 && hwid.length <= 50;
+}
 
-  if (!user) {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let randomPart = '';
-    for (let i = 0; i < 10; i++) randomPart += chars.charAt(Math.floor(Math.random() * chars.length));
-    const newKey = `Drakness_${randomPart}`;
-    user = new User({ ip, key: newKey, completed: false, createdAt: new Date(), expiresAt: new Date(Date.now() + 24*60*60*1000) });
-    await user.save();
-  }
+exports.handler = async (event) => {
+    const headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Content-Type': 'application/json'
+    };
 
-  res.redirect(`/verify?key=${encodeURIComponent(user.key)}&completed=${user.completed}`);
-});
+    if (event.httpMethod === 'OPTIONS') {
+        return { statusCode: 200, headers, body: '' };
+    }
 
-app.get('/verify', async (req, res) => {
-  // Không cần render EJS nữa, chỉ redirect hoặc trả HTML tĩnh
-  res.redirect('/verify.html');  // public/verify.html sẽ tự lấy ?key từ URL
-});
+    try {
+        await client.connect();
+        const db = client.db('drakness_db');
+        const keysCollection = db.collection('keys');
+        const logsCollection = db.collection('logs');
 
-app.post('/api/complete-task', async (req, res) => {
-  await connectDB();
-  const { key } = req.body;
-  if (!key) return res.json({ success: false, message: 'Thiếu key' });
+        const path = event.path.replace('/.netlify/functions/api', '');
+        const method = event.httpMethod;
+        const ip = getClientIP(event);
 
-  const user = await User.findOne({ key });
-  if (!user) return res.json({ success: false, message: 'Key không tồn tại' });
+        // ===== API: GET /key/:keyName =====
+        // Format: /key/ten-key?hwid=YOUR_HWID
+        if (path.startsWith('/key/') && method === 'GET') {
+            const keyName = path.replace('/key/', '');
+            const hwid = event.queryStringParameters?.hwid;
 
-  if (new Date() > user.expiresAt) return res.json({ success: false, message: 'Key đã hết hạn' });
+            // Kiểm tra tham số
+            if (!keyName || !hwid) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ 
+                        error: 'Thiếu thông tin key hoặc HWID',
+                        code: 'MISSING_PARAMS'
+                    })
+                };
+            }
 
-  if (user.completed) return res.json({ success: true });
+            // Validate HWID
+            if (!validateHWID(hwid)) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ 
+                        error: 'HWID không hợp lệ (chỉ chấp nhận chữ, số, - _ và độ dài 8-50 ký tự)',
+                        code: 'INVALID_HWID'
+                    })
+                };
+            }
 
-  user.completed = true;
-  await user.save();
+            // Tìm key trong database
+            const keyDoc = await keysCollection.findOne({ 
+                name: keyName,
+                expiresAt: { $gt: new Date() }
+            });
 
-  res.json({ success: true });
-});
+            // Log truy cập
+            await logsCollection.insertOne({
+                type: 'access',
+                keyName,
+                hwid,
+                ip,
+                timestamp: new Date(),
+                found: !!keyDoc
+            });
 
-app.get('/api/check-key', async (req, res) => {
-  await connectDB();
-  const { key } = req.query;
-  if (!key) return res.json({ valid: false, message: 'Vui lòng nhập key' });
+            // Key không tồn tại hoặc đã hết hạn
+            if (!keyDoc) {
+                return {
+                    statusCode: 404,
+                    headers,
+                    body: JSON.stringify({ 
+                        error: 'Key không tồn tại hoặc đã hết hạn',
+                        code: 'KEY_NOT_FOUND'
+                    })
+                };
+            }
 
-  const user = await User.findOne({ key });
-  if (!user) return res.json({ valid: false, message: 'Key không tồn tại hoặc đã hết hạn' });
+            // Key đã được gán cho HWID khác
+            if (keyDoc.assignedTo && keyDoc.assignedTo !== hwid) {
+                return {
+                    statusCode: 403,
+                    headers,
+                    body: JSON.stringify({ 
+                        error: 'Key này đã được gán cho HWID khác',
+                        code: 'ALREADY_ASSIGNED'
+                    })
+                };
+            }
 
-  if (new Date() > user.expiresAt) return res.json({ valid: false, message: 'Key đã hết hạn (24 tiếng)' });
+            // Key chưa được gán - gán cho HWID này
+            if (!keyDoc.assignedTo) {
+                await keysCollection.updateOne(
+                    { name: keyName },
+                    { 
+                        $set: { 
+                            assignedTo: hwid,
+                            assignedAt: new Date(),
+                            status: 'assigned'
+                        }
+                    }
+                );
+                
+                await logsCollection.insertOne({
+                    type: 'assign',
+                    keyName,
+                    hwid,
+                    ip,
+                    timestamp: new Date()
+                });
+            }
 
-  if (!user.completed) return res.json({ valid: false, message: 'Chưa hoàn thành nhiệm vụ' });
+            // Trả về key cho user
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                    success: true,
+                    key: keyDoc.key,
+                    name: keyDoc.name,
+                    expiresAt: keyDoc.expiresAt,
+                    status: 'assigned',
+                    message: 'Key đã được gán thành công cho HWID của bạn'
+                })
+            };
+        }
 
-  res.json({ valid: true, message: 'Key hợp lệ!' });
-});
+        // ===== API: POST /api/create-key =====
+        if (path === '/create-key' && method === 'POST') {
+            const { name, duration = 24 } = JSON.parse(event.body);
+            
+            if (!name || !/^[a-zA-Z0-9\-]+$/.test(name)) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ 
+                        error: 'Tên key không hợp lệ (chỉ chấp nhận chữ, số và -)'
+                    })
+                };
+            }
 
-// Xử lý tất cả route khác
-app.use((req, res) => res.status(404).send('Not Found'));
+            // Kiểm tra key đã tồn tại
+            const existing = await keysCollection.findOne({ name });
+            if (existing) {
+                return {
+                    statusCode: 409,
+                    headers,
+                    body: JSON.stringify({ 
+                        error: 'Tên key đã tồn tại'
+                    })
+                };
+            }
 
-module.exports.handler = serverless(app);
+            // Tạo key mới
+            const keyData = {
+                name: name,
+                key: generateKey(),
+                createdAt: new Date(),
+                expiresAt: new Date(Date.now() + duration * 60 * 60 * 1000),
+                assignedTo: null,
+                assignedAt: null,
+                status: 'available'
+            };
+
+            await keysCollection.insertOne(keyData);
+
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                    success: true,
+                    message: 'Key đã được tạo',
+                    key: keyData
+                })
+            };
+        }
+
+        // ===== API: GET /api/check-key/:name =====
+        if (path.startsWith('/check-key/') && method === 'GET') {
+            const keyName = path.replace('/check-key/', '');
+            
+            const keyDoc = await keysCollection.findOne({ name: keyName });
+            
+            if (!keyDoc) {
+                return {
+                    statusCode: 404,
+                    headers,
+                    body: JSON.stringify({ 
+                        valid: false,
+                        error: 'Key không tồn tại'
+                    })
+                };
+            }
+
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                    valid: true,
+                    name: keyDoc.name,
+                    status: keyDoc.status,
+                    assignedTo: keyDoc.assignedTo,
+                    createdAt: keyDoc.createdAt,
+                    expiresAt: keyDoc.expiresAt,
+                    isExpired: new Date() > keyDoc.expiresAt
+                })
+            };
+        }
+
+        return {
+            statusCode: 404,
+            headers,
+            body: JSON.stringify({ error: 'API không tồn tại' })
+        };
+
+    } catch (error) {
+        console.error('Lỗi:', error);
+        return {
+            statusCode: 500,
+            headers,
+            body: JSON.stringify({ 
+                error: 'Lỗi server: ' + error.message 
+            })
+        };
+    } finally {
+        await client.close();
+    }
+};
