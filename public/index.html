@@ -1,37 +1,129 @@
-<!DOCTYPE html>
-<html lang="vi">
+<!doctype html>
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Get Key Script Roblox</title>
-  <style>
-    body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; text-align: center; padding: 60px 20px; min-height: 100vh; margin: 0; }
-    h1 { color: #ff4d4d; text-shadow: 0 0 10px #ff4d4d; }
-    button { padding: 18px 60px; font-size: 24px; background: #ff4d4d; color: white; border: none; border-radius: 50px; cursor: pointer; margin-top: 30px; box-shadow: 0 8px 16px rgba(255, 77, 77, 0.4); transition: all 0.3s; }
-    button:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(255, 77, 77, 0.6); }
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NTT HUB - KEY SYSTEM</title>
+  <link rel="icon" type="image/png" href="/Logo/1750522984859.png" />
+  <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <h1>NHẬN KEY SCRIPT ROBLOX MIỄN PHÍ</h1>
-  <p style="font-size: 20px; margin: 30px 0;">Key dạng: Drakness_XXXXXXXXXX<br>Chỉ chờ 15 giây – hết hạn sau 24 tiếng</p>
+  <div class="wrap">
+    <header>
+      <div class="brand">
+        <div class="logo"><img src="/Logo/1750522984859.png" alt="Logo" /></div>
+        <div class="brand-title">
+          <p class="name">NTT HUB</p>
+          <p class="sub">Key System</p>
+        </div>
+      </div>
+      <div class="pill">Get Key</div>
+    </header>
 
-  <button id="startBtn">NHẬN KEY NGAY</button>
+    <main>
+      <section class="card">
+        <div class="inner">
+          <div class="kicker"><span class="dot"></span>Key System</div>
+          <h1 class="title">Get Your Key</h1>
+          <p class="desc">Nhấn nút bên dưới để bắt đầu nhận key. Bạn sẽ trải qua 3 bước nhanh gọn.</p>
 
-  <p style="margin-top: 60px; opacity: 0.7;">Key tự động hết hạn sau 24 giờ kể từ lúc tạo</p>
+          <div class="grid">
+            <div class="box">
+              <h2>Get Key</h2>
+              <button class="btn primary" id="btnGetKey" onclick="startGetKey()">Get Key</button>
+            </div>
+            <div class="box">
+              <h2>Discord</h2>
+              <button class="btn" onclick="window.open('https://discord.gg/sEs7HvCXJF','_blank')">Join Discord</button>
+            </div>
+          </div>
+
+          <div id="status-msg"></div>
+
+          <footer>
+            <div>© <span id="y"></span> NTT HUB</div>
+            <a class="link" href="https://discord.gg/sEs7HvCXJF" target="_blank">discord.gg/sEs7HvCXJF</a>
+          </footer>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script>
-    document.getElementById('startBtn').addEventListener('click', async () => {
+    document.getElementById("y").textContent = new Date().getFullYear();
+
+    const API = "https://api.ntt-hub.xyz";
+
+    // Lấy hwid từ URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const hwid = urlParams.get("hwid");
+
+    if (hwid) {
+      localStorage.setItem("hwid", hwid);
+    }
+
+    const storedHwid = localStorage.getItem("hwid");
+
+    if (!storedHwid) {
+      showBlockNotification();
+    }
+
+    async function startGetKey() {
+      if (!storedHwid) return showBlockNotification();
+
+      const btn = document.getElementById("btnGetKey");
+      const msg = document.getElementById("status-msg");
+
+      btn.disabled = true;
+      btn.textContent = "Đang khởi tạo...";
+      msg.textContent = "";
+
+      const ostime = Math.floor(Date.now() / 1000);
+      localStorage.setItem("ostime", ostime);
+
       try {
-        const res = await fetch('/api/start', { method: 'POST' });
-        if (res.redirected) {
-          window.location.href = res.url;  // redirect đến /verify
+        const res = await fetch(`${API}/?type=init`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ hwid: storedHwid, ostime }),
+        });
+        const data = await res.json();
+
+        if (data.status) {
+          msg.textContent = "✔ Đã khởi tạo, đang chuyển bước 1...";
+          setTimeout(() => {
+            window.location.href = `step1.html`;
+          }, 600);
         } else {
-          alert('Lỗi khởi tạo key');
+          btn.disabled = false;
+          btn.textContent = "Get Key";
+          msg.textContent = "Lỗi khởi tạo: " + (data.error || "unknown");
         }
-      } catch (err) {
-        alert('Lỗi kết nối: ' + err.message);
+      } catch (e) {
+        btn.disabled = false;
+        btn.textContent = "Get Key";
+        msg.textContent = "Không kết nối được API. Thử lại.";
       }
-    });
+    }
+
+    function showBlockNotification() {
+      const overlay = document.createElement("div");
+      Object.assign(overlay.style, { position:"fixed", inset:"0", backgroundColor:"rgba(0,0,0,0.85)", zIndex:"9998" });
+      document.body.appendChild(overlay);
+
+      const noti = document.createElement("div");
+      Object.assign(noti.style, { position:"fixed", top:"50%", left:"50%", transform:"translate(-50%,-50%)", background:"#111", padding:"28px 36px", border:"1.5px solid rgba(255,255,255,0.3)", borderRadius:"16px", color:"white", fontFamily:"ui-sans-serif,sans-serif", zIndex:"9999", width:"360px", textAlign:"center", boxShadow:"0 0 40px rgba(255,255,255,0.1)" });
+      noti.innerHTML = `
+        <h2 style="margin-top:0;font-size:16px;letter-spacing:.1em;text-transform:uppercase;">Notification</h2>
+        <p style="font-size:14px;line-height:1.7;color:rgba(255,255,255,.78);">
+          Bạn chưa có HWID.<br><br>
+          Vui lòng dùng đúng URL:<br><br>
+          <b style="color:white;">https://ntt-hub.xyz/key/ntt-hub.html?hwid=YOUR_HWID</b>
+        </p>
+      `;
+      document.body.appendChild(noti);
+    }
   </script>
+<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1d8bccf5ab1748bc8db6759a1df26490","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
