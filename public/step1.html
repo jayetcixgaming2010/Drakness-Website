@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NTT HUB - Step 1</title>
+  <title>Drakness HUB - Step 1</title>
   <style>
     :root{--bg:#0a0a0b;--line:rgba(255,255,255,.14);--text:#f2f2f2;--muted:#a7a7a7;--shadow:0 22px 70px rgba(0,0,0,.7);--r:18px}
     *{box-sizing:border-box}html,body{height:100%}
@@ -28,7 +28,7 @@
   </style>
 </head>
 <body>
-  <h1 class="title1">NTT HUB</h1>
+  <h1 class="title1">Drakness HUB</h1>
   <h2 class="title2">Step 1</h2>
 
   <!-- CHỈ GIỮ LẠI MỘT THẺ SCRIPT NÀY -->
@@ -46,7 +46,7 @@
     let links = {};
     let completed = [];
 
-    fetch("/data/ytb.json") 
+    fetch("ytb.json") 
         .then(r => r.json())
         .then(data => {
             links = data;
@@ -150,7 +150,7 @@
             <p style="font-size:16px;line-height:1.5;">
                 Bạn chưa có HWID<br><br>
                 Vui lòng dùng đúng URL:<br><br>
-                <b>https://ntt-hub.xyz/?hwid=YOUR_HWID</b>
+                <b>https://drakness.netlify.app/index.html</b>
             </p>
         `;
         document.body.appendChild(noti);

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NTT HUB - Step 3</title>
+  <title>Drakness HUB - Step 3</title>
   <style>
     :root{--bg:#0a0a0b;--line:rgba(255,255,255,.14);--text:#f2f2f2;--muted:#a7a7a7;--shadow:0 22px 70px rgba(0,0,0,.7);--r:18px}
     *{box-sizing:border-box}html,body{height:100%}
@@ -33,7 +33,7 @@
   <div class="wrap">
     <header>
       <div class="brand">
-        <h1>NTT HUB</h1>
+        <h1>Drakness HUB</h1>
         <p>Step 3</p>
       </div>
     </header>
@@ -51,7 +51,7 @@
           <div id="statusMsg">Đang kiểm tra...</div>
 
           <footer>
-            <div>NTT HUB • Key System</div>
+            <div>Drakness HUB • Key System</div>
             <div>Step 3</div>
           </footer>
         </div>
@@ -96,8 +96,8 @@
               const data = await res.json();
 
               if (data.success && data.key) {
-                  localStorage.setItem("ntt_key", data.key);
-                  localStorage.setItem("ntt_expires", data.expiresAt);
+                  localStorage.setItem("drakness_key", data.key);
+                  localStorage.setItem("drakness_expires", data.expiresAt);
                   msg.textContent = "✔ Tạo key thành công! Đang chuyển...";
                   setTimeout(() => window.location.href = "key.html", 500);
               } else {

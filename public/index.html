@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NTT HUB - KEY SYSTEM</title>
-  <link rel="icon" type="image/png" href="/Logo/1750522984859.png" />
+  <title>Drakness HUB - KEY SYSTEM</title>
+  <link rel="icon" type="image/png" href="logo.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="wrap">
     <header>
       <div class="brand">
-        <div class="logo"><img src="/Logo/1750522984859.png" alt="Logo" /></div>
+        <div class="logo"><img src="logo.png" alt="Logo" /></div>
         <div class="brand-title">
-          <p class="name">NTT HUB</p>
+          <p class="name">Drakness HUB</p>
           <p class="sub">Key System</p>
         </div>
       </div>
@@ -44,7 +44,7 @@
           <div id="key-status" class="key-status" style="display: none;"></div>
 
           <footer>
-            <div>© <span id="y"></span> NTT HUB</div>
+            <div>© <span id="y"></span> Drakness HUB</div>
             <a class="link" href="https://discord.gg/sEs7HvCXJF" target="_blank">discord.gg/sEs7HvCXJF</a>
           </footer>
         </div>
@@ -57,21 +57,21 @@
 
     const API = "https://drakness.netlify.app/.netlify/functions/api"; // THAY DOMAIN CỦA BẠN
 
-    // Lấy hwid từ URL param
-    const urlParams = new URLSearchParams(window.location.search);
-    const hwid = urlParams.get("hwid");
+    // Xóa hoặc comment đoạn kiểm tra này
+    // if (!storedHwid) {
+    //   showBlockNotification();
+    // }
 
-    if (hwid) {
-      localStorage.setItem("hwid", hwid);
-    }
-
-    const storedHwid = localStorage.getItem("hwid");
-
-    // Kiểm tra nếu có HWID thì kiểm tra trạng thái key hiện tại
-    if (storedHwid) {
-      checkUserKeyStatus();
-    } else {
-      showBlockNotification();
+    // Thay vào đó, kiểm tra trong hàm startGetKey
+    async function startGetKey() {
+      const storedHwid = localStorage.getItem("hwid"); // Lấy lại HWID mới nhất
+      
+      if (!storedHwid) {
+        showBlockNotification(); // Chỉ hiện thông báo khi nhấn nút mà không có HWID
+        return;
+      }
+      
+      // ... phần code xử lý tiếp theo
     }
 
     // Kiểm tra trạng thái key của user
@@ -242,5 +242,4 @@
   </style>
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1d8bccf5ab1748bc8db6759a1df26490","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
-
 </html>
