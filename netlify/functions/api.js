@@ -4,18 +4,15 @@ const crypto = require('crypto');
 const uri = process.env.MONGODB_URI;
 const client = new MongoClient(uri);
 
-// Hàm tạo key ngẫu nhiên
 function generateKey() {
     return 'DARK-' + crypto.randomBytes(8).toString('hex').toUpperCase();
 }
 
-// Hàm lấy IP
 function getClientIP(event) {
     return event.headers['x-forwarded-for'] || 
            event.headers['client-ip'] || 'unknown';
 }
 
-// Hàm validate HWID (chỉ cho phép chữ, số, - _)
 function validateHWID(hwid) {
     return /^[a-zA-Z0-9\-_]+$/.test(hwid) && hwid.length >= 8 && hwid.length <= 50;
 }
@@ -43,7 +40,7 @@ exports.handler = async (event) => {
         const method = event.httpMethod;
         const ip = getClientIP(event);
 
-        // ===== API: GET /key/:keyName =====
+        // GET /key/:keyName
         if (path.startsWith('/key/') && method === 'GET') {
             const keyName = path.replace('/key/', '');
             const hwid = event.queryStringParameters?.hwid;
@@ -141,7 +138,7 @@ exports.handler = async (event) => {
             };
         }
 
-        // ===== API: POST /create-key =====
+        // POST /create-key
         if (path === '/create-key' && method === 'POST') {
             const { name, duration = 24 } = JSON.parse(event.body);
             
@@ -189,7 +186,7 @@ exports.handler = async (event) => {
             };
         }
 
-        // ===== API: GET /check-key/:name =====
+        // GET /check-key/:name
         if (path.startsWith('/check-key/') && method === 'GET') {
             const keyName = path.replace('/check-key/', '');
             
@@ -221,7 +218,7 @@ exports.handler = async (event) => {
             };
         }
 
-        // ===== API: POST /step1 =====
+        // POST /step1
         if (path === '/step1' && method === 'POST') {
             const { hwid } = JSON.parse(event.body);
             
@@ -276,7 +273,7 @@ exports.handler = async (event) => {
             };
         }
 
-        // ===== API: POST /step2 =====
+        // POST /step2
         if (path === '/step2' && method === 'POST') {
             const { hwid, hash } = JSON.parse(event.body);
             
@@ -302,7 +299,6 @@ exports.handler = async (event) => {
                 };
             }
 
-            // Kiểm tra step1 đã hoàn thành chưa
             const userStep = await userStepsCollection.findOne({ hwid: hwid });
             
             if (!userStep || !userStep.step1_completed) {
@@ -317,9 +313,7 @@ exports.handler = async (event) => {
                 };
             }
 
-            // TODO: Thêm logic xác thực hash từ Linkvertise ở đây
-            // Đây là ví dụ đơn giản, bạn cần thay bằng logic thực tế
-            const isValidHash = hash && hash.length > 10; // Logic tạm thời
+            const isValidHash = hash && hash.length > 10;
 
             if (!isValidHash) {
                 return {
@@ -364,7 +358,7 @@ exports.handler = async (event) => {
             };
         }
 
-        // ===== API: POST /step3 =====
+        // POST /step3
         if (path === '/step3' && method === 'POST') {
             const { hwid, hash } = JSON.parse(event.body);
             
@@ -390,7 +384,6 @@ exports.handler = async (event) => {
                 };
             }
 
-            // Kiểm tra user đã hoàn thành step1 và step2 chưa
             const userStep = await userStepsCollection.findOne({ hwid: hwid });
             
             if (!userStep || !userStep.step1_completed || !userStep.step2_completed) {
@@ -405,7 +398,6 @@ exports.handler = async (event) => {
                 };
             }
 
-            // Kiểm tra hash có khớp với step2 không
             if (userStep.step2_hash !== hash) {
                 return {
                     statusCode: 403,
@@ -418,7 +410,6 @@ exports.handler = async (event) => {
                 };
             }
 
-            // Kiểm tra xem HWID này đã có key chưa
             const existingKey = await keysCollection.findOne({ 
                 assignedTo: hwid,
                 expiresAt: { $gt: new Date() }
@@ -437,13 +428,12 @@ exports.handler = async (event) => {
                 };
             }
 
-            // Tạo key mới cho user
             const keyName = `user_${hwid.substring(0, 8)}_${Date.now().toString(36)}`;
             const newKey = {
                 name: keyName,
                 key: generateKey(),
                 createdAt: new Date(),
-                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
+                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
                 assignedTo: hwid,
                 assignedAt: new Date(),
                 status: 'assigned'
@@ -484,7 +474,7 @@ exports.handler = async (event) => {
             };
         }
 
-        // ===== API: GET /user-status/:hwid =====
+        // GET /user-status/:hwid
         if (path.startsWith('/user-status/') && method === 'GET') {
             const hwid = path.replace('/user-status/', '');
             
@@ -520,6 +510,124 @@ exports.handler = async (event) => {
                         key: userKey.key,
                         expiresAt: userKey.expiresAt
                     } : null
+                })
+            };
+        }
+
+        // POST /create-default-key
+        if (path === '/create-default-key' && method === 'POST') {
+            const { adminSecret } = JSON.parse(event.body);
+            
+            if (adminSecret !== "DRAKNESS_ADMIN_2026") {
+                return {
+                    statusCode: 403,
+                    headers,
+                    body: JSON.stringify({ 
+                        success: false, 
+                        error: 'Unauthorized' 
+                    })
+                };
+            }
+
+            const existing = await keysCollection.findOne({ name: "drakness" });
+            
+            if (existing) {
+                return {
+                    statusCode: 200,
+                    headers,
+                    body: JSON.stringify({ 
+                        success: true, 
+                        message: 'Key drakness đã tồn tại',
+                        key: existing
+                    })
+                };
+            }
+
+            const keyData = {
+                name: "drakness",
+                key: generateKey(),
+                createdAt: new Date(),
+                expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                assignedTo: null,
+                assignedAt: null,
+                status: 'available'
+            };
+
+            await keysCollection.insertOne(keyData);
+
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                    success: true,
+                    message: 'Key drakness đã được tạo',
+                    key: keyData
+                })
+            };
+        }
+
+        // GET /admin/keys
+        if (path === '/admin/keys' && method === 'GET') {
+            const adminKey = event.queryStringParameters?.adminKey;
+            
+            if (adminKey !== "DRAKNESS_ADMIN_KEY_2026") {
+                return {
+                    statusCode: 403,
+                    headers,
+                    body: JSON.stringify({ 
+                        success: false, 
+                        error: 'Unauthorized' 
+                    })
+                };
+            }
+
+            const allKeys = await keysCollection.find({}).toArray();
+            
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                    success: true,
+                    keys: allKeys
+                })
+            };
+        }
+
+        // GET /admin/stats
+        if (path === '/admin/stats' && method === 'GET') {
+            const adminKey = event.queryStringParameters?.adminKey;
+            
+            if (adminKey !== "DRAKNESS_ADMIN_KEY_2026") {
+                return {
+                    statusCode: 403,
+                    headers,
+                    body: JSON.stringify({ 
+                        success: false, 
+                        error: 'Unauthorized' 
+                    })
+                };
+            }
+
+            const totalKeys = await keysCollection.countDocuments();
+            const assignedKeys = await keysCollection.countDocuments({ status: 'assigned' });
+            const availableKeys = await keysCollection.countDocuments({ status: 'available' });
+            const expiredKeys = await keysCollection.countDocuments({ expiresAt: { $lt: new Date() } });
+            const totalUsers = await userStepsCollection.countDocuments();
+            const totalLogs = await logsCollection.countDocuments();
+
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                    success: true,
+                    stats: {
+                        totalKeys,
+                        assignedKeys,
+                        availableKeys,
+                        expiredKeys,
+                        totalUsers,
+                        totalLogs
+                    }
                 })
             };
         }
