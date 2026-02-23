@@ -29,7 +29,7 @@
   <h2 class="title2">Step 1</h2>
 
   <script>
-    // 🔥 QUAN TRỌNG: THAY BẰNG DOMAIN THẬT CỦA BẠN
+    // 🔥 DOMAIN THẬT CỦA BẠN
     const API = "https://drakness.netlify.app/.netlify/functions/api";
     const hwid = localStorage.getItem("hwid");
 
@@ -48,8 +48,8 @@
       let links = {};
       let completed = [];
 
-      // 🔥 SỬA LỖI: Fetch file JSON từ dự án của bạn
-      fetch("/data/ytb.json")
+      // Fetch file JSON từ thư mục public (không cần /data/)
+      fetch("/ytb.json")
         .then(r => {
           if (!r.ok) throw new Error("Không thể tải danh sách video");
           return r.json();
@@ -79,8 +79,7 @@
           box.appendChild(apiStatus);
         })
         .catch(error => {
-          alert("Không tải được danh sách video: " + error.message);
-          // Tạo dữ liệu mẫu nếu fetch thất bại
+          console.error("Lỗi fetch ytb.json:", error);
           createMockData();
         });
     }

@@ -57,7 +57,7 @@
   </div>
 
   <script>
-    // 🔥 QUAN TRỌNG: THAY BẰNG DOMAIN THẬT CỦA BẠN
+    // 🔥 DOMAIN THẬT CỦA BẠN
     const API = "https://drakness.netlify.app/.netlify/functions/api";
     const hwid = localStorage.getItem("hwid");
     const urlParams = new URLSearchParams(window.location.search);
@@ -93,10 +93,11 @@
         const data = await res.json();
 
         if (data.success && data.key) {
+          // Lưu key vào localStorage với tên drakness_key
           localStorage.setItem("drakness_key", data.key);
           localStorage.setItem("drakness_expires", data.expiresAt);
           msg.textContent = "✔ Tạo key thành công! Đang chuyển...";
-          setTimeout(() => window.location.href = "key.html", 500);
+          setTimeout(() => window.location.href = "key.html?name=drakness", 500);
         } else {
           let errMsg = "Lỗi: " + (data.error || "unknown");
           let redirectTarget = "step1.html";

@@ -1,19 +1,19 @@
 // key.js
-const API_URL = "https://ntt-hub.xyz/.netlify/functions/api"; // THAY DOMAIN CỦA BẠN
+const API_URL = "https://drakness.netlify.app/.netlify/functions/api";
 const hwid = localStorage.getItem("hwid");
 
 // =============================
 //     FETCH KEY FROM API
-// =============================
+//==============================
 async function fetchKeyInfo() {
     if (!hwid) {
         showNotification("Not Have HWID");
         return;
     }
 
-    // Lấy tên key từ URL hoặc dùng mặc định
+    // Lấy tên key từ URL hoặc dùng mặc định "drakness"
     const urlParams = new URLSearchParams(window.location.search);
-    const keyName = urlParams.get("name") || "ntt-hub"; 
+    const keyName = urlParams.get("name") || "drakness";
 
     const url = `${API_URL}/key/${keyName}?hwid=${encodeURIComponent(hwid)}`;
     
@@ -27,10 +27,8 @@ async function fetchKeyInfo() {
             return;
         }
 
-        // HIỂN THỊ KEY
         document.getElementById("keyDisplay").textContent = data.key;
 
-        // BẮT ĐẦU ĐẾM NGƯỢC
         if (data.expiresAt) {
             const expiry = new Date(data.expiresAt).getTime();
             const now = new Date().getTime();
@@ -108,7 +106,6 @@ function closeNotification() {
 // =============================
 //      AUTO LOAD ON START
 // =============================
-// Kiểm tra HWID và tự động fetch key
 if (!hwid) {
     showNotification("Không tìm thấy HWID. Vui lòng truy cập đúng URL.");
 } else {

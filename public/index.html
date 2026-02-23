@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Drakness HUB - KEY SYSTEM</title>
-  <link rel="icon" type="image/png" href="/Logo/1750522984859.png" />
+  <link rel="icon" type="image/png" href="/logo.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="wrap">
     <header>
       <div class="brand">
-        <div class="logo"><img src="/Logo/1750522984859.png" alt="Logo" /></div>
+        <div class="logo"><img src="/logo.png" alt="Logo" /></div>
         <div class="brand-title">
           <p class="name">Drakness HUB</p>
           <p class="sub">Key System</p>
@@ -54,7 +54,7 @@
   <script>
     document.getElementById("y").textContent = new Date().getFullYear();
 
-    // 🔥 QUAN TRỌNG: THAY BẰNG DOMAIN THẬT CỦA BẠN
+    // 🔥 DOMAIN THẬT CỦA BẠN
     const API = "https://drakness.netlify.app/.netlify/functions/api";
 
     // Lấy hwid từ URL param
@@ -89,7 +89,7 @@
               <p>✅ Bạn đã có key hợp lệ!</p>
               <p>Key: <strong>${data.keyInfo.key}</strong></p>
               <p>Còn hạn: <strong>${hoursLeft} giờ</strong></p>
-              <button class="btn small" onclick="window.location.href='key.html'">Xem Key</button>
+              <button class="btn small" onclick="window.location.href='key.html?name=drakness'">Xem Key</button>
             </div>
           `;
         }
@@ -99,7 +99,6 @@
     }
 
     async function startGetKey() {
-      // 🔥 SỬA LỖI: Kiểm tra HWID ngay trong hàm này
       const currentHwid = localStorage.getItem("hwid");
       if (!currentHwid) {
         showBlockNotification();
@@ -122,7 +121,7 @@
           msg.textContent = "✔ Bạn đã có key, đang chuyển đến trang key...";
           msg.className = "status-message success";
           setTimeout(() => {
-            window.location.href = "key.html";
+            window.location.href = "key.html?name=drakness";
           }, 1000);
           return;
         }
