@@ -4,14 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Drakness HUB - KEY SYSTEM</title>
-  <link rel="icon" type="image/png" href="logo.png" />
+  <link rel="icon" type="image/png" href="/Logo/1750522984859.png" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="wrap">
     <header>
       <div class="brand">
-        <div class="logo"><img src="logo.png" alt="Logo" /></div>
+        <div class="logo"><img src="/Logo/1750522984859.png" alt="Logo" /></div>
         <div class="brand-title">
           <p class="name">Drakness HUB</p>
           <p class="sub">Key System</p>
@@ -40,7 +40,6 @@
 
           <div id="status-msg" class="status-message"></div>
           
-          <!-- Hiển thị trạng thái key nếu đã có -->
           <div id="key-status" class="key-status" style="display: none;"></div>
 
           <footer>
@@ -55,26 +54,24 @@
   <script>
     document.getElementById("y").textContent = new Date().getFullYear();
 
-    const API = "https://drakness.netlify.app/.netlify/functions/api"; // THAY DOMAIN CỦA BẠN
+    // 🔥 QUAN TRỌNG: THAY BẰNG DOMAIN THẬT CỦA BẠN
+    const API = "https://drakness.netlify.app/.netlify/functions/api";
 
-    // Xóa hoặc comment đoạn kiểm tra này
-    // if (!storedHwid) {
-    //   showBlockNotification();
-    // }
+    // Lấy hwid từ URL param
+    const urlParams = new URLSearchParams(window.location.search);
+    const hwid = urlParams.get("hwid");
 
-    // Thay vào đó, kiểm tra trong hàm startGetKey
-    async function startGetKey() {
-      const storedHwid = localStorage.getItem("hwid"); // Lấy lại HWID mới nhất
-      
-      if (!storedHwid) {
-        showBlockNotification(); // Chỉ hiện thông báo khi nhấn nút mà không có HWID
-        return;
-      }
-      
-      // ... phần code xử lý tiếp theo
+    if (hwid) {
+      localStorage.setItem("hwid", hwid);
     }
 
-    // Kiểm tra trạng thái key của user
+    const storedHwid = localStorage.getItem("hwid");
+
+    // Kiểm tra nếu có HWID thì kiểm tra trạng thái key hiện tại
+    if (storedHwid) {
+      checkUserKeyStatus();
+    }
+
     async function checkUserKeyStatus() {
       try {
         const res = await fetch(`${API}/user-status/${encodeURIComponent(storedHwid)}`);
@@ -102,7 +99,12 @@
     }
 
     async function startGetKey() {
-      if (!storedHwid) return showBlockNotification();
+      // 🔥 SỬA LỖI: Kiểm tra HWID ngay trong hàm này
+      const currentHwid = localStorage.getItem("hwid");
+      if (!currentHwid) {
+        showBlockNotification();
+        return;
+      }
 
       const btn = document.getElementById("btnGetKey");
       const msg = document.getElementById("status-msg");
@@ -112,12 +114,8 @@
       msg.textContent = "";
       msg.className = "status-message";
 
-      const ostime = Math.floor(Date.now() / 1000);
-      localStorage.setItem("ostime", ostime);
-
       try {
-        // Kiểm tra xem user đã có key chưa
-        const checkRes = await fetch(`${API}/user-status/${encodeURIComponent(storedHwid)}`);
+        const checkRes = await fetch(`${API}/user-status/${encodeURIComponent(currentHwid)}`);
         const checkData = await checkRes.json();
         
         if (checkData.success && checkData.hasValidKey) {
@@ -129,7 +127,6 @@
           return;
         }
 
-        // Kiểm tra xem user đã hoàn thành step nào chưa
         if (checkData.success) {
           if (checkData.steps.step1 && checkData.steps.step2 && !checkData.steps.step3) {
             msg.textContent = "⏳ Bạn đã hoàn thành Step 2, đang chuyển tiếp...";
@@ -146,7 +143,6 @@
           }
         }
 
-        // Nếu chưa có gì, bắt đầu từ step1
         msg.textContent = "✔ Đang chuyển đến bước 1...";
         msg.className = "status-message success";
         setTimeout(() => {
@@ -174,72 +170,13 @@
         <p style="font-size:14px;line-height:1.7;color:rgba(255,255,255,.78);">
           Bạn chưa có HWID.<br><br>
           Vui lòng dùng đúng URL:<br><br>
-          <b style="color:white;word-break:break-all;">https://drakness.netlify.app/index.html</b>
-          <br><br>
-          <span style="font-size:12px;color:rgba(255,255,255,0.5);">(Thay YOUR_HWID bằng HWID thật của bạn)</span>
+          <b style="color:white;word-break:break-all;">https://drakness.netlify.app/?hwid=YOUR_HWID</b>
         </p>
       `;
       document.body.appendChild(noti);
       
-      // Disable nút Get Key
       document.getElementById("btnGetKey").disabled = true;
     }
   </script>
-
-  <style>
-    /* Thêm một số style cho status message */
-    .status-message {
-      margin-top: 16px;
-      padding: 12px;
-      border-radius: 12px;
-      font-size: 14px;
-      text-align: center;
-      background: rgba(255,255,255,0.05);
-      border: 1px solid rgba(255,255,255,0.1);
-    }
-    .status-message.success {
-      color: #4ade80;
-      border-color: rgba(74, 222, 128, 0.3);
-    }
-    .status-message.error {
-      color: #f87171;
-      border-color: rgba(248, 113, 113, 0.3);
-    }
-    .key-status {
-      margin-top: 20px;
-      padding: 16px;
-      border-radius: 16px;
-      background: rgba(74, 222, 128, 0.1);
-      border: 1px solid rgba(74, 222, 128, 0.3);
-    }
-    .key-info {
-      text-align: center;
-    }
-    .key-info p {
-      margin: 8px 0;
-      color: rgba(255,255,255,0.9);
-    }
-    .key-info strong {
-      color: #4ade80;
-      font-family: monospace;
-      font-size: 16px;
-    }
-    .btn.small {
-      padding: 8px 16px;
-      font-size: 13px;
-      margin-top: 8px;
-      background: rgba(255,255,255,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
-      border-radius: 999px;
-      cursor: pointer;
-      color: white;
-      transition: all 0.2s;
-    }
-    .btn.small:hover {
-      background: rgba(255,255,255,0.2);
-      border-color: rgba(255,255,255,0.3);
-    }
-  </style>
-<script defer src="https://static.cloudflareinsights.com/beacon.min.js/vcd15cbe7772f49c399c6a5babf22c1241717689176015" integrity="sha512-ZpsOmlRQV6y907TI0dKBHq9Md29nnaEIPlkf84rnaERnq6zvWvPUqr2ft8M1aS28oN72PdrCzSjY4U6VaAw1EQ==" data-cf-beacon='{"version":"2024.11.0","token":"1d8bccf5ab1748bc8db6759a1df26490","r":1,"server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
