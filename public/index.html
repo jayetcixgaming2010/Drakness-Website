@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Get Key Script Roblox</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); color: white; text-align: center; padding: 60px 20px; min-height: 100vh; margin: 0; }
+    h1 { color: #ff4d4d; text-shadow: 0 0 10px #ff4d4d; }
+    button { padding: 18px 60px; font-size: 24px; background: #ff4d4d; color: white; border: none; border-radius: 50px; cursor: pointer; margin-top: 30px; box-shadow: 0 8px 16px rgba(255, 77, 77, 0.4); transition: all 0.3s; }
+    button:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(255, 77, 77, 0.6); }
+  </style>
+</head>
+<body>
+  <h1>NHẬN KEY SCRIPT ROBLOX MIỄN PHÍ</h1>
+  <p style="font-size: 20px; margin: 30px 0;">Key dạng: Drakness_XXXXXXXXXX<br>Chỉ chờ 15 giây – hết hạn sau 24 tiếng</p>
+
+  <button id="startBtn">NHẬN KEY NGAY</button>
+
+  <p style="margin-top: 60px; opacity: 0.7;">Key tự động hết hạn sau 24 giờ kể từ lúc tạo</p>
+
+  <script>
+    document.getElementById('startBtn').addEventListener('click', async () => {
+      try {
+        const res = await fetch('/api/start', { method: 'POST' });
+        if (res.redirected) {
+          window.location.href = res.url;  // redirect đến /verify
+        } else {
+          alert('Lỗi khởi tạo key');
+        }
+      } catch (err) {
+        alert('Lỗi kết nối: ' + err.message);
+      }
+    });
+  </script>
+</body>
+</html>
